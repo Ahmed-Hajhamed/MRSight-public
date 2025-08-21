@@ -26,7 +26,7 @@ class MRSight(MRSightUI.MRSightMainWindow):
         self.primary_graph = WeightedVisibilityGraph.Graph(self.subject_index)
         self.comparison_graph = WeightedVisibilityGraph.Graph(self.comparison_subject_index)
         self.selected_metabolite = None
-        self._double_click_detected = False
+        self.double_click_detected = False
         self.edge_artists = []
         self.all_y = []
 
@@ -45,18 +45,22 @@ class MRSight(MRSightUI.MRSightMainWindow):
         self.spectrum_widget.axes.plot(
             WeightedVisibilityGraph.chemical_shifts_array,
             self.primary_graph.current_spectrum, 
-            linewidth=0.5
+            linewidth=0.5, 
+            color = 'red'
         )
-        
+        self.spectrum_group.setTitle(f"MRS Spectrum - Subject: {self.subject_index//2} (Time {self.subject_index%2+1})")
         # Plot comparison spectrum if enabled
         if self.enable_comparison_check.isChecked():
             self.spectrum_widget.axes.plot(
                 WeightedVisibilityGraph.chemical_shifts_array,
                 self.comparison_graph.current_spectrum,
                 linewidth=0.2, 
-                color='red'
+                color='white'
             )
-            
+            self.spectrum_group.setTitle(
+                f"MRS Spectrum - Subject: {self.subject_index//2} (Time {self.subject_index%2+1}) vs Subject: {self.comparison_subject_index//2} (Time {self.comparison_subject_index%2+1})"
+            )
+
         self.spectrum_widget.axes.set_xlabel("Chemical Shift (ppm)")
         self.spectrum_widget.axes.set_ylabel("Signal Intensity")
 
@@ -203,6 +207,14 @@ class MRSight(MRSightUI.MRSightMainWindow):
             self.graph_widget.axes.set_xlim(min(all_x) - 2, max(all_x) + 2)
             self.graph_widget.axes.set_ylim(bottom_y_limit, max_y * 1.05)
 
+        if self.enable_comparison_check.isChecked() and self.selected_metabolite is not None:
+            self.graph_group.setTitle(
+                f"Ratio-Weighted {self.primary_graph.graph_type} - Subject {self.subject_index//2} (Time {self.subject_index%2+1}) vs Subject {self.comparison_subject_index//2} (Time {self.comparison_subject_index%2+1})"
+                )
+        else:
+            self.graph_group.setTitle(
+                f"Ratio-Weighted {self.primary_graph.graph_type} - Subject {self.subject_index//2} (Time {self.subject_index%2+1})"
+            )
         # Set labels and finalize
         self.graph_widget.axes.set_xlabel("Chemical Shift (ppm)")
         self.graph_widget.axes.set_ylabel("Metabolite Intensity")
@@ -314,9 +326,13 @@ class MRSight(MRSightUI.MRSightMainWindow):
                 self.nodes_tooltip.set_backgroundcolor(MRSightUI.colors[node["name"]])
                 
                 # Format node metadata
-                node_metadata = self.format_node_metadata(node, index)
-                
-                self.nodes_tooltip.set_text(node_metadata)
+                primary_node_metadata = self.format_node_metadata(self.primary_graph, node, index)
+                if self.enable_comparison_check.isChecked() and self.selected_metabolite is not None:
+                    comparison_node = self.comparison_graph.nodes[index]
+                    comparison_node_metadata = self.format_node_metadata(self.comparison_graph, comparison_node, index, comparison=True)
+                    primary_node_metadata += "\n\nComparison:\n" + comparison_node_metadata
+
+                self.nodes_tooltip.set_text(primary_node_metadata)
                 self.nodes_tooltip.set_visible(True)
                 visible = True
                 break
@@ -324,19 +340,20 @@ class MRSight(MRSightUI.MRSightMainWindow):
         if not visible:
             self.nodes_tooltip.set_visible(False)
 
-    def format_node_metadata(self, node, index):
+    def format_node_metadata(self, graph, node, index, comparison=False):
         """Format node metadata for tooltip display."""
-        metadata = [f"{node['name']}"]
+        metadata = []
+        if not comparison:
+            metadata.append(f"{node['name']}")
         metadata.append(f"Intensity: {node['coordinates'][1]:.2f}")
         
         if node['name'] != "PCr":
             metadata.append(f"Ratio to PCr: {node['pcr_ratio']:.4f}")
-            
-        metadata.append(f"Strength: {self.primary_graph.undirected_strengths[index]:.2f}")
-        metadata.append(f"Betweenness Centrality: {self.primary_graph.undirected_betweenness_centralities[index]:.2f}")
-        metadata.append(f"Clustering Coefficient: {self.primary_graph.undirected_clustering_coefs[index]:.2f}")
-        metadata.append(f"Node Efficiency: {self.primary_graph.local_efficiency[index]:.2f}")
-        metadata.append(f"Assortativity Coefficient Pos: {self.primary_graph.assortativity_coefs_pos[index]:.2f}")
+
+        metadata.append(f"Strength: {graph.undirected_strengths[index]:.2f}")
+        metadata.append(f"Betweenness Centrality: {graph.undirected_betweenness_centralities[index]:.2f}")
+        metadata.append(f"Clustering Coefficient: {graph.undirected_clustering_coefs[index]:.2f}")
+        metadata.append(f"Node Efficiency: {graph.local_efficiency[index]:.2f}")
         
         return "\n".join(metadata)
 
@@ -364,16 +381,16 @@ class MRSight(MRSightUI.MRSightMainWindow):
             new_alpha = 0.2 if current_alpha > 0.5 else 1.0
             arrow.set_alpha(new_alpha)
             self.graph_widget.figure.canvas.draw_idle()
-            self._double_click_detected = True
+            self.double_click_detected = True
         else:
             # Delay single click to handle potential double clicks
             def delayed_single_click():
                 time.sleep(0.25)  # wait to see if double click happens
-                if not getattr(self, "_double_click_detected", False):
+                if not getattr(self, "double_click_detected", False):
                     self.flip_edge(arrow)
                     self.graph_widget.figure.canvas.draw_idle()
                 else:
-                    self._double_click_detected = False
+                    self.double_click_detected = False
 
             threading.Thread(target=delayed_single_click).start()
 
@@ -388,7 +405,7 @@ class MRSight(MRSightUI.MRSightMainWindow):
                 min_distance = distance
                 closest_metabolite = node["name"]
 
-        if min_distance < 0.2:
+        if self.checkboxes[closest_metabolite].isChecked() and min_distance < 0.2:
             if self.selected_metabolite == closest_metabolite:
                 self.selected_metabolite = None
             else:
@@ -417,8 +434,6 @@ class MRSight(MRSightUI.MRSightMainWindow):
         self.draw_spectrum()
         self.draw_graph()
         self.write_global_features()
-        self.graph_group.setTitle(f"Ratio-Weighted {self.primary_graph.graph_type} - Subject: {index+1}")
-        self.spectrum_group.setTitle(f"MRS Spectrum - Subject: {self.subject_index+1}")
 
     def change_comparison_subject(self, index):
         """Change the comparison subject being displayed."""
@@ -433,14 +448,16 @@ class MRSight(MRSightUI.MRSightMainWindow):
         self.comparison_graph.change_graph_type(type)
         self.draw_graph()
         self.write_global_features()
-        self.graph_group.setTitle(f"Ratio-Weighted {type} - Subject: {self.subject_index+1}")
 
     def flip_edge(self, edge_artist):
         """Flip the direction and ratio of an edge."""
         meta = edge_artist.meta
         meta["ratio"] = 1 / meta["ratio"] if meta["ratio"] != 0 else 0
         meta["source"], meta["target"] = meta["target"], meta["source"]
+        new_linewidth, new_alpha = self.primary_graph.get_linewidth_alpha(meta["ratio"])[1:3]
         edge_artist.set_positions(edge_artist.posB, edge_artist.posA)
+        edge_artist.set_linewidth(new_linewidth)
+        edge_artist.set_alpha(new_alpha)
 
 
 if __name__ == "__main__":

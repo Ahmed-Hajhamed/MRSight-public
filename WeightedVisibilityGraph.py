@@ -7,7 +7,7 @@ from visibility_graph import visibility_graph
 # Constants
 MIN_THICKNESS = 1.2
 MAX_THICKNESS = 4
-MIN_ALPHA = 0.5
+MIN_ALPHA = 0.51
 MAX_ALPHA = 1.0
 
 # Load data
@@ -114,14 +114,21 @@ class Graph:
             return
             
         weights = [abs(edge["weight"]) for edge in self.edges]
-        min_w, max_w = min(weights), max(weights)
-        weight_range = max_w - min_w
+        self.min_w, self.max_w = min(weights), max(weights)
+        weight_range = self.max_w - self.min_w
         
         for edge in self.edges:
-            normalized = (abs(edge["weight"]) - min_w) / weight_range if weight_range else 1.0
+            normalized, linewidth, alpha = self.get_linewidth_alpha(edge["weight"])
             edge["weight_normalized"] = normalized
-            edge["linewidth"] = MIN_THICKNESS + normalized * (MAX_THICKNESS - MIN_THICKNESS)
-            edge["alpha"] = MIN_ALPHA + normalized * (MAX_ALPHA - MIN_ALPHA)
+            edge["linewidth"] = linewidth
+            edge["alpha"] = alpha
+
+    def get_linewidth_alpha(self, weight):
+        """Get the line width and alpha values based on the edge weight."""
+        normalized = (abs(weight) - self.min_w) / (self.max_w - self.min_w) if (self.max_w - self.min_w) else 1.0
+        linewidth = MIN_THICKNESS + normalized * (MAX_THICKNESS - MIN_THICKNESS)
+        alpha = MIN_ALPHA + normalized * (MAX_ALPHA - MIN_ALPHA)
+        return normalized,linewidth, alpha
 
     def compute_graph_features(self):
         # Local features
@@ -129,8 +136,7 @@ class Graph:
         self.undirected_betweenness_centralities = bct.betweenness_wei(self.undirected_connection_matrix)
         self.undirected_clustering_coefs = bct.clustering_coef_wd(self.undirected_connection_matrix)
         self.local_efficiency = bct.efficiency_wei(self.undirected_connection_matrix, local=True)
-        self.assortativity_coefs_pos = bct.local_assortativity_wu_sign(self.undirected_connection_matrix)[0]
-        
+
         # Global features
         self.density = bct.density_und(self.undirected_connection_matrix)[0]
         self.global_efficiency = bct.efficiency_wei(self.undirected_connection_matrix)

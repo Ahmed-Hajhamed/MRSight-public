@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QCheckBox, QPushButton, QComboBox, 
+                             QHBoxLayout, QCheckBox, QComboBox, 
                              QLabel, QGroupBox, QGridLayout, QToolTip,
                              QTextEdit, QSplitter, QAction,
                              )
@@ -7,6 +7,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from AboutDialog import AboutDialog
 from GraphWidget import GraphWidget
+
+
 class MRSightMainWindow(QMainWindow):
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -25,6 +27,7 @@ class MRSightMainWindow(QMainWindow):
             }
             QLabel {
                 color: #ffffff;
+                font-size: 13px;
                 font-weight: bold;
             }
             QGroupBox {
@@ -62,7 +65,8 @@ class MRSightMainWindow(QMainWindow):
                 border: 1px solid #555;
                 padding: 5px;
                 border-radius: 3px;
-                font-size:30;
+                font-size: 13px;
+                font-weight: bold;
             }
             QComboBox:hover {
                 border: 1px solid #8b4989;
@@ -71,8 +75,12 @@ class MRSightMainWindow(QMainWindow):
                 background-color: #3c3c3c;
                 color: white;
                 selection-background-color: #8b4989;
+                font-size: 13px;
+                font-weight: bold;
             }
             QCheckBox {
+                font-size: 13px;
+                font-weight: bold;
                 color: white;
                 spacing: 5px;
                 background-color: #555;
@@ -171,7 +179,7 @@ class MRSightMainWindow(QMainWindow):
         title_label.setStyleSheet("""
             font-size: 24px;
             font-weight: bold;
-            color: #8b4989;
+            color: #FF6CDF;
             padding: 10px;
             background-color: #1e1e1e;
             border-radius: 5px;
@@ -188,7 +196,7 @@ class MRSightMainWindow(QMainWindow):
         primary_label = QLabel("Primary Subject:")
         primary_label.setMinimumWidth(100)
         self.primary_subject_combo = QComboBox()
-        self.primary_subject_combo.addItems([f"Subject {i}" for i in range(1 , 19)])
+        self.primary_subject_combo.addItems([f"Subject {i//2} (Time {i%2+1})" for i in range(18)])
         self.primary_subject_combo.setCurrentIndex(0)
         self.primary_subject_combo.currentIndexChanged.connect(self.change_subject)
         primary_layout.addWidget(primary_label)
@@ -207,7 +215,7 @@ class MRSightMainWindow(QMainWindow):
         comparison_label = QLabel("Comparison Subject:")
         comparison_label.setMinimumWidth(100)
         self.comparison_subject_combo = QComboBox()
-        self.comparison_subject_combo.addItems([f"Subject {i}" for i in range(1 , 19)])
+        self.comparison_subject_combo.addItems([f"Subject {i//2} (Time {i%2+1})" for i in range(18)])
         self.comparison_subject_combo.setCurrentIndex(2)
         self.comparison_subject_combo.currentIndexChanged.connect(self.change_comparison_subject)
         self.comparison_subject_combo.setEnabled(False)
@@ -300,8 +308,12 @@ class MRSightMainWindow(QMainWindow):
         self.spectrum_widget = GraphWidget()
         self.spectrum_widget.figure.tight_layout(pad=1.5)
 
-        self.graph_group = QGroupBox(f"Ratio-Weighted Complete Metabolite Graph - Subject {self.primary_subject_combo.currentIndex()}")
-        self.spectrum_group = QGroupBox(f"MRS Spectrum - Subject {self.primary_subject_combo.currentIndex()}")
+        self.graph_group = QGroupBox(
+            f"Ratio-Weighted Complete Metabolite Graph - Subject {self.primary_subject_combo.currentIndex()//2} (Time {self.primary_subject_combo.currentIndex()%2+1})"
+        )
+        self.spectrum_group = QGroupBox(
+            f"MRS Spectrum - Subject {self.primary_subject_combo.currentIndex()//2} (Time {self.primary_subject_combo.currentIndex()%2+1})"
+        )
 
         graph_layout= QVBoxLayout()
         spectrum_layout = QVBoxLayout()
@@ -353,7 +365,7 @@ def style_global_features(subject_index, graph):
                 margin: 0;
             }}
             .title {{
-                color: #8b4989;
+                color: #FF6CDF;
                 font-size: 16px;
                 font-weight: bold;
                 margin-bottom: 10px;
@@ -366,7 +378,7 @@ def style_global_features(subject_index, graph):
                 justify-content: space-between;
             }}
             .key {{
-                color: #a085a0;
+                color: #FF6CDF;
                 font-weight: bold;
             }}
             .value {{
@@ -377,7 +389,7 @@ def style_global_features(subject_index, graph):
                 font-weight: bold;
             }}
         </style>
-        <div class="title">Subject {subject_index+1} Metrics</div>
+        <div class="title">Subject {subject_index//2} (Time {subject_index%2+1}) Metrics</div>
         <div class="metric"><span class="key">Global Efficiency:</span> <span class="value">{graph.global_efficiency:.3f}</span></div>
         <div class="metric"><span class="key">Path Length:</span> <span class="value">{graph.char_path_length:.3f}</span></div>
         <div class="metric"><span class="key">Transitivity:</span> <span class="value">{graph.undirected_transitivity_wu:.3f}</span></div>
@@ -392,7 +404,7 @@ colors = {
     "ATPγ": '#FFFF33',        # Bright Yellow
     "PCr": '#3366FF',         # Bright Blue
     "Pi": '#FF8000',          # Bright Orange
-    "NAD+": '#CC33FF',        # Bright Purple
+    "NAD+": "#D370F4",        # Bright Purple
     "NADH": '#00FFFF',        # Bright Cyan
     "MP": '#FF33FF',          # Bright Magenta
     "GPC": '#CCFF00',         # Bright Lime
