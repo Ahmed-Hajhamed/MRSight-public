@@ -50,13 +50,21 @@ MRSight is a specialized visualization and analysis tool for Magnetic Resonance 
 
 ## Screenshots
 ### Main Interface
-<img width="1920" height="991" alt="Python 3 11 8_17_2025 6_33_31 PM" src="https://github.com/user-attachments/assets/10ef1e43-c696-4d0e-aa81-669f2122c5ea" />
+  <img width="1919" height="995" alt="fig  1" src="https://github.com/user-attachments/assets/5ed1f33b-e361-4f91-b9cc-22fb1422be4b" />
 
 ### Network Analysis View
-<img width="1920" height="991" alt="Python 3 11 8_17_2025 6_34_28 PM" src="https://github.com/user-attachments/assets/986517c0-5546-4aac-8030-b134513b1981" />
+- Complete Metabolite Graph
+  <img width="1488" height="631" alt="fig 2" src="https://github.com/user-attachments/assets/eaae82b7-36f2-4be8-b604-51a4d104cda7" />
+  
+- Natural Visibility Graph
+  <img width="1488" height="631" alt="fig  3" src="https://github.com/user-attachments/assets/f5c4a82e-5945-414a-9139-0fe2207c7ebd" />
+
+- Horizontal Visibility Graph
+  <img width="1501" height="634" alt="fig  4" src="https://github.com/user-attachments/assets/bf12604c-25d6-47b4-bf22-dcb18ca6bf74" />
 
 ### Comparative Analysis
-<img width="1920" height="991" alt="Python 3 11 8_18_2025 3_05_27 PM" src="https://github.com/user-attachments/assets/07d496f2-b90b-45ac-a36a-ab3a58c3eef3" />
+  <img width="1919" height="990" alt="fig  5" src="https://github.com/user-attachments/assets/2ea8c638-6497-4e21-8685-fd4b4a31f26a" />
+
 
 ## Installation
 ```bash
